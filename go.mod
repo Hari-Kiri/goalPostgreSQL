@@ -1,4 +1,4 @@
-module goalPostgreSQL
+module github.com/Hari-Kiri/goalPostgreSQL
 
 go 1.19
 
