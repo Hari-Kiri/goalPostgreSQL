@@ -14,7 +14,7 @@ import (
 func PgPoolConnect(databaseURL string) (*pgxpool.Pool, pgtype.Text, error) {
 	var pgVersionNil pgtype.Text
 	// urlExample := "postgres://username:password@localhost:5432/database_name"
-	connectionPool, errorConnection := pgxpool.Connect(context.Background(), databaseURL)
+	connectionPool, errorConnection := pgxpool.New(context.Background(), databaseURL)
 	if errorConnection != nil {
 		// log.Fatalln("Unable to connect to database: ", errorConnection)
 		return nil, pgVersionNil, fmt.Errorf("unable to connect to database: %q", errorConnection)
