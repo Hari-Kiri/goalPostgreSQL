@@ -36,7 +36,7 @@ func PgClose(connectionPool *pgxpool.Pool) {
 // PostgreSQL select query for multiple rows of data.
 // Please put your parameter placeholders in inputParameters to prevent SQL Injection.
 func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
-	condition string, inputParameters ...any) ([]map[any]interface{}, error) {
+	condition string, inputParameters ...any) ([]map[string]interface{}, error) {
 	// Extract columns parameter to syntax string
 	var columnString strings.Builder
 	// Get last column from columns parameter
@@ -59,7 +59,7 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	// Restore the columns
 	columns = append(columns, lastColumn)
 	// Make map string interface array variable to hold this function result
-	result := make([]map[any]interface{}, 0)
+	result := make([]map[string]interface{}, 0)
 	// Iterate query result
 	for rows.Next() {
 		// Make temporary interface to store PostgreSQL query result value
@@ -76,7 +76,7 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 			return nil, fmt.Errorf("failed to scan rows: %s", errorGetRows)
 		}
 		// Make map string interface variable to store temporary interface values
-		mapStringInterface := make(map[any]interface{})
+		mapStringInterface := make(map[string]interface{})
 		// Read every pointer value from temporary interface then store all the data
 		// to map string interface variable
 		for index, value := range values {
