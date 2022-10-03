@@ -34,7 +34,8 @@ func PgClose(connectionPool *pgxpool.Pool) {
 }
 
 // PostgreSQL select query for multiple rows of data.
-// Please put your parameter placeholders in inputParameters to prevent SQL Injection.
+// Please put your select arguments in inputParameters to prevent SQL Injection.
+// Arguments should be referenced positionally from the SQL string as $1, $2, etc.
 func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	condition string, inputParameters ...any) ([]map[string]interface{}, error) {
 	// Extract columns parameter to syntax string
@@ -49,7 +50,7 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	}
 	// Execute query
 	query := "SELECT " + columnString.String() + lastColumn + " FROM " + table + " " + condition
-	rows, errorGetRows := connectionPool.Query(context.Background(), query)
+	rows, errorGetRows := connectionPool.Query(context.Background(), query, inputParameters...)
 	if errorGetRows != nil {
 		return nil, fmt.Errorf(
 			"PostgreSQL select query failed: syntax %q, query parameters %q, error %s",
