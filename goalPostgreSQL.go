@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgtype"
@@ -36,6 +37,9 @@ func PgClose(connectionPool *pgxpool.Pool) {
 // PostgreSQL select query for multiple rows of data.
 // Please put your select query arguments in inputParameters to prevent SQL Injection.
 // Arguments should be referenced positionally from the SQL string as $1, $2, etc.
+//
+// Function use example:
+// goalPostgreSQL.PgSelect(connectionPool, []string{"id"}, "database.public.users", "WHERE username = $1 AND password = $2", username, password)
 func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	condition string, inputParameters ...any) ([]map[string]interface{}, error) {
 	/* Column 0 (error!!!) */
@@ -146,7 +150,14 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 
 // Update PostgreSQL table. On success update this method will return how many rows updated.
 // Please put your update query arguments in inputParameters to prevent SQL Injection.
-// Arguments should be referenced positionally from the SQL string as $1, $2, etc.
+// Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
+// Inserted arguments reference in condition parameter must be count after the last columns.
+//
+// Example:
+// There is 7 columns will be update, so the arguments reference in condition parameter should start from $8.
+//
+// Function use example:
+// goalPostgreSQL.PgUpdate(connectionPool, "marketplace.public.marketplace_users", []string{column1, column2, column3}, "WHERE id = $4", valueColumn1, valueColumn2, valueColumn3)
 func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 	condition string, inputParameters ...any) (int, error) {
 	/* Column 0 (error!!!) */
@@ -156,7 +167,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 	/* Single column update query */
 	if len(columns) == 1 {
 		// MySql update query
-		query := "UPDATE " + table + " SET " + columns[0] + " = ? " + condition
+		query := "UPDATE " + table + " SET " + columns[0] + " = $1 " + condition
 		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
 		if errorExecutingQuery != nil {
 			return 0, fmt.Errorf("PostgreSQL update query failed: syntax %q, query parameters %q, error %s",
@@ -170,12 +181,12 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 	/* Multi columns update query */
 	// Create update value parameter placeholders
 	var columnPlaceholders strings.Builder
-	// Get last column from columns parameter
-	lastColumn := columns[len(columns)-1] + " = ?"
+	// Get last column from columns parameter and add last argument position reference
+	lastColumn := columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
 	// Delete last column from columns parameter
 	columns = columns[:len(columns)-1]
-	for _, column := range columns {
-		columnPlaceholders.WriteString(column + " = ?, ")
+	for index, column := range columns {
+		columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index) + ", ")
 	}
 	// MySql update query
 	query := "UPDATE " + table + " SET " + columnPlaceholders.String() + lastColumn + " " + condition
