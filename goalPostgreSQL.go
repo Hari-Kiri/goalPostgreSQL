@@ -186,7 +186,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 	// Delete last column from columns parameter
 	columns = columns[:len(columns)-1]
 	for index, column := range columns {
-		columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index) + ", ")
+		columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index+1) + ", ")
 	}
 	// MySql update query
 	query := "UPDATE " + table + " SET " + columnPlaceholders.String() + lastColumn + " " + condition
