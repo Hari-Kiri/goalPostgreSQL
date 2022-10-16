@@ -34,7 +34,7 @@ func PgClose(connectionPool *pgxpool.Pool) {
 }
 
 // PostgreSQL select query for multiple rows of data.
-// Please put your select arguments in inputParameters to prevent SQL Injection.
+// Please put your select query arguments in inputParameters to prevent SQL Injection.
 // Arguments should be referenced positionally from the SQL string as $1, $2, etc.
 func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	condition string, inputParameters ...any) ([]map[string]interface{}, error) {
@@ -48,8 +48,7 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 		query := "SELECT " + columns[0] + " FROM " + table + " " + condition
 		rows, errorGetRows := connectionPool.Query(context.Background(), query, inputParameters...)
 		if errorGetRows != nil {
-			return nil, fmt.Errorf(
-				"PostgreSQL select query failed: syntax %q, query parameters %q, error %s",
+			return nil, fmt.Errorf("PostgreSQL select query failed: syntax %q, query parameters %q, error %s",
 				query, inputParameters, errorGetRows)
 		}
 		defer rows.Close()
@@ -103,8 +102,7 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	query := "SELECT " + columnString.String() + lastColumn + " FROM " + table + " " + condition
 	rows, errorGetRows := connectionPool.Query(context.Background(), query, inputParameters...)
 	if errorGetRows != nil {
-		return nil, fmt.Errorf(
-			"PostgreSQL select query failed: syntax %q, query parameters %q, error %s",
+		return nil, fmt.Errorf("PostgreSQL select query failed: syntax %q, query parameters %q, error %s",
 			query, inputParameters, errorGetRows)
 	}
 	defer rows.Close()
@@ -144,4 +142,50 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 		result = append(result, mapStringInterface)
 	}
 	return result, nil
+}
+
+// Update PostgreSQL table. On success update this method will return how many rows updated.
+// Please put your update query arguments in inputParameters to prevent SQL Injection.
+// Arguments should be referenced positionally from the SQL string as $1, $2, etc.
+func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
+	condition string, inputParameters ...any) (int, error) {
+	/* Column 0 (error!!!) */
+	if len(columns) == 0 {
+		return 0, fmt.Errorf("no column selected for update: %q", columns)
+	}
+	/* Single column update query */
+	if len(columns) == 1 {
+		// MySql update query
+		query := "UPDATE " + table + " SET " + columns[0] + " = ? " + condition
+		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+		if errorExecutingQuery != nil {
+			return 0, fmt.Errorf("PostgreSQL update query failed: syntax %q, query parameters %q, error %s",
+				query, inputParameters, errorExecutingQuery)
+		}
+		// Get rows updated
+		rowsAffected := executeQuery.RowsAffected()
+		// Return the total of rows updated
+		return int(rowsAffected), nil
+	}
+	/* Multi columns update query */
+	// Create update value parameter placeholders
+	var columnPlaceholders strings.Builder
+	// Get last column from columns parameter
+	lastColumn := columns[len(columns)-1] + " = ?"
+	// Delete last column from columns parameter
+	columns = columns[:len(columns)-1]
+	for _, column := range columns {
+		columnPlaceholders.WriteString(column + " = ?, ")
+	}
+	// MySql update query
+	query := "UPDATE " + table + " SET " + columnPlaceholders.String() + lastColumn + " " + condition
+	executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+	if errorExecutingQuery != nil {
+		return 0, fmt.Errorf("PostgreSQL update query failed: syntax %q, query parameters %q, error %s",
+			query, inputParameters, errorExecutingQuery)
+	}
+	// Get rows updated
+	rowsAffected := executeQuery.RowsAffected()
+	// Return the total of rows updated
+	return int(rowsAffected), nil
 }
