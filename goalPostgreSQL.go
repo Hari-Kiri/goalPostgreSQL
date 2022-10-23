@@ -157,9 +157,9 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 // There is 7 columns will be update, so the arguments reference in condition parameter should start from $8.
 //
 // Function use example:
-// goalPostgreSQL.PgUpdate(connectionPool, "marketplace.public.marketplace_users", []string{column1, column2, column3}, "WHERE id = $4", valueColumn1, valueColumn2, valueColumn3)
+// goalPostgreSQL.PgUpdate(connectionPool, "database.public.users", []string{column1, column2, column3}, "WHERE id = $4", valueColumn1, valueColumn2, valueColumn3)
 func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
-	condition string, inputParameters ...any) (int, error) {
+	condition string, inputParameters ...any) (int64, error) {
 	/* Column 0 (error!!!) */
 	if len(columns) == 0 {
 		return 0, fmt.Errorf("no column selected for update: %q", columns)
@@ -173,10 +173,8 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 			return 0, fmt.Errorf("PostgreSQL update query failed: syntax %q, query parameters %q, error %s",
 				query, inputParameters, errorExecutingQuery)
 		}
-		// Get rows updated
-		rowsAffected := executeQuery.RowsAffected()
 		// Return the total of rows updated
-		return int(rowsAffected), nil
+		return executeQuery.RowsAffected(), nil
 	}
 	/* Multi columns update query */
 	// Create update value parameter placeholders
@@ -195,8 +193,56 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 		return 0, fmt.Errorf("PostgreSQL update query failed: syntax %q, query parameters %q, error %s",
 			query, inputParameters, errorExecutingQuery)
 	}
-	// Get rows updated
-	rowsAffected := executeQuery.RowsAffected()
 	// Return the total of rows updated
-	return int(rowsAffected), nil
+	return executeQuery.RowsAffected(), nil
+}
+
+// Insert data to PostgreSQL table. On success update this method will return how many rows updated.
+// Please put your update query arguments in inputParameters to prevent SQL Injection.
+// Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
+//
+// Function use example:
+// goalPostgreSQL.PgInsert(connectionPool, "database.public.users", []string{column1, column2, column3}, valueColumn1, valueColumn2, valueColumn3)
+func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, inputParameters ...any) (int64, error) {
+	if len(columns) == 0 {
+		return 0, fmt.Errorf("no column: %q", columns)
+	}
+	// Single column insert
+	if len(columns) == 1 {
+		column := columns[0]
+		// MySql insert query
+		query := "INSERT INTO " + table + " (" + column + ") VALUES ($1)"
+		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+		if errorExecutingQuery != nil {
+			return 0, fmt.Errorf("PostgreSQL insert query failed: syntax %q, query parameters %q, error %s",
+				query, inputParameters, errorExecutingQuery)
+		}
+		// Return the total of rows updated
+		return executeQuery.RowsAffected(), nil
+	}
+	// Create value parameter placeholders
+	var valuePlaceholders strings.Builder
+	for index := range inputParameters {
+		valuePlaceholders.WriteString("$" + strconv.Itoa(index+1) + ", ")
+	}
+	// Extract columns parameter to syntax string
+	var columnString strings.Builder
+	// Get last column from columns parameter
+	lastColumn := columns[len(columns)-1]
+	// Delete last column from columns parameter
+	columns = columns[:len(columns)-1]
+	// Extract columns
+	for _, column := range columns {
+		columnString.WriteString(column + ", ")
+	}
+	// MySql insert query
+	query := "INSERT INTO " + table + " (" + columnString.String() + lastColumn + ") VALUES (" +
+		valuePlaceholders.String() + ")"
+	executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+	if errorExecutingQuery != nil {
+		return 0, fmt.Errorf("PostgreSQL insert query failed: syntax %q, query parameters %q, error %s",
+			query, inputParameters, errorExecutingQuery)
+	}
+	// Return the total of rows updated
+	return executeQuery.RowsAffected(), nil
 }
