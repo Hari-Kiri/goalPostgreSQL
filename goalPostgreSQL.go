@@ -222,8 +222,9 @@ func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, inpu
 	}
 	// Create value parameter placeholders
 	var valuePlaceholders strings.Builder
-	for index := range inputParameters {
-		valuePlaceholders.WriteString("$" + strconv.Itoa(index+1) + ", ")
+	valuePlaceholders.WriteString("$1")
+	for index := 1; index < len(inputParameters); index++ {
+		valuePlaceholders.WriteString(", $" + strconv.Itoa(index+1))
 	}
 	// Extract columns parameter to syntax string
 	var columnString strings.Builder
