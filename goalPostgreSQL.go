@@ -200,64 +200,61 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 // Insert data to PostgreSQL table. On success insert this method will return how many rows inserted.
 // Please put your update query arguments in inputParameters to prevent SQL Injection.
 // Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
-// This method is good for inserting multiple data, If You want to inserting single data, please use goalPostgreSQL.PgInsertSingle().
 //
 // Function use example:
 // goalPostgreSQL.PgInsert(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "value of column1", "value of column2", "value of column3")
-func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, inputParameters ...any) (int64, error) {
-	if len(columns) == 0 {
-		return 0, fmt.Errorf("no column: %q", columns)
-	}
-	// Single column insert
-	if len(columns) == 1 {
-		column := columns[0]
-		// Sql insert query
-		query := "INSERT INTO " + table + " (" + column + ") VALUES ($1)"
-		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
-		if errorExecutingQuery != nil {
-			return 0, fmt.Errorf("PostgreSQL insert query failed: syntax %q, query parameters %q, error %s",
-				query, inputParameters, errorExecutingQuery)
-		}
-		// Return the total of rows updated
-		return executeQuery.RowsAffected(), nil
-	}
-	// Create value parameter placeholders
-	var valuePlaceholders strings.Builder
-	valuePlaceholders.WriteString("$1")
-	for index := 1; index < len(inputParameters); index++ {
-		valuePlaceholders.WriteString(", $" + strconv.Itoa(index+1))
-	}
-	// Extract columns parameter to syntax string
-	var columnString strings.Builder
-	// Get last column from columns parameter
-	lastColumn := columns[len(columns)-1]
-	// Delete last column from columns parameter
-	columns = columns[:len(columns)-1]
-	// Extract columns
-	for _, column := range columns {
-		columnString.WriteString(column + ", ")
-	}
-	// Sql insert query
-	query := "INSERT INTO " + table + " (" + columnString.String() + lastColumn + ") VALUES (" +
-		valuePlaceholders.String() + ")"
-	executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
-	if errorExecutingQuery != nil {
-		return 0, fmt.Errorf("PostgreSQL insert query failed: syntax %q, query parameters %q, error %s",
-			query, inputParameters, errorExecutingQuery)
-	}
-	// Return the total of rows updated
-	return executeQuery.RowsAffected(), nil
-}
+// func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, inputParameters ...any) (int64, error) {
+// 	if len(columns) == 0 {
+// 		return 0, fmt.Errorf("no column: %q", columns)
+// 	}
+// 	// Single column insert
+// 	if len(columns) == 1 {
+// 		column := columns[0]
+// 		// Sql insert query
+// 		query := "INSERT INTO " + table + " (" + column + ") VALUES ($1)"
+// 		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+// 		if errorExecutingQuery != nil {
+// 			return 0, fmt.Errorf("PostgreSQL insert query failed: syntax %q, query parameters %q, error %s",
+// 				query, inputParameters, errorExecutingQuery)
+// 		}
+// 		// Return the total of rows updated
+// 		return executeQuery.RowsAffected(), nil
+// 	}
+// 	// Create value parameter placeholders
+// 	var valuePlaceholders strings.Builder
+// 	valuePlaceholders.WriteString("$1")
+// 	for index := 1; index < len(inputParameters); index++ {
+// 		valuePlaceholders.WriteString(", $" + strconv.Itoa(index+1))
+// 	}
+// 	// Extract columns parameter to syntax string
+// 	var columnString strings.Builder
+// 	// Get last column from columns parameter
+// 	lastColumn := columns[len(columns)-1]
+// 	// Delete last column from columns parameter
+// 	columns = columns[:len(columns)-1]
+// 	// Extract columns
+// 	for _, column := range columns {
+// 		columnString.WriteString(column + ", ")
+// 	}
+// 	// Sql insert query
+// 	query := "INSERT INTO " + table + " (" + columnString.String() + lastColumn + ") VALUES (" +
+// 		valuePlaceholders.String() + ")"
+// 	executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+// 	if errorExecutingQuery != nil {
+// 		return 0, fmt.Errorf("PostgreSQL insert query failed: syntax %q, query parameters %q, error %s",
+// 			query, inputParameters, errorExecutingQuery)
+// 	}
+// 	// Return the total of rows updated
+// 	return executeQuery.RowsAffected(), nil
+// }
 
 // Insert data to PostgreSQL table. On success insert this method will return data inserted primary key.
 // Please put your update query arguments in inputParameters to prevent SQL Injection.
 // Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
-// This method is good for inserting single data, If You want to inserting multiple data, please use goalPostgreSQL.PgInsert().
-// If You insert multiple data using this method it only return the first row primary key.
 //
 // Function use example:
 // goalPostgreSQL.PgInsertOne(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "my_id_column_primary_key_with_auto_increment", "value of column1", "value of column2", "value of column3")
-func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, columnPrimaryKey string, inputParameters ...any) (int, error) {
+func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, columnPrimaryKey string, inputParameters ...any) (int64, error) {
 	if len(columns) == 0 {
 		return 0, fmt.Errorf("no column: %q", columns)
 	}
@@ -273,7 +270,7 @@ func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, c
 				query, inputParameters, errorExecutingQuery)
 		}
 		// Return the id of row inserted
-		return id, nil
+		return int64(id), nil
 	}
 	// Create value parameter placeholders
 	var valuePlaceholders strings.Builder
@@ -301,5 +298,5 @@ func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, c
 			query, inputParameters, errorExecutingQuery)
 	}
 	// Return the id of row inserted
-	return id, nil
+	return int64(id), nil
 }
