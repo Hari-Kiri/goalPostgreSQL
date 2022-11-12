@@ -253,7 +253,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 // Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
 //
 // Function use example:
-// goalPostgreSQL.PgInsertOne(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "my_id_column_primary_key_with_auto_increment", "value of column1", "value of column2", "value of column3")
+// goalPostgreSQL.PgInsertOne(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "my_id_column_primary_key", "value of column1", "value of column2", "value of column3")
 func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, columnPrimaryKey string, inputParameters ...any) (int64, error) {
 	if len(columns) == 0 {
 		return 0, fmt.Errorf("no column: %q", columns)
