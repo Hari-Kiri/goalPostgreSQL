@@ -249,7 +249,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 // }
 
 // Insert data to PostgreSQL table. On success insert this method will return data inserted primary key.
-// Please put your update query arguments in inputParameters to prevent SQL Injection.
+// Please put your insert query arguments in inputParameters to prevent SQL Injection.
 // Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
 //
 // Function use example:
