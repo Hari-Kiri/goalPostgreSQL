@@ -249,15 +249,15 @@ func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, inpu
 	return executeQuery.RowsAffected(), nil
 }
 
-// Insert data to PostgreSQL table. On success insert this method will return data inserted id.
+// Insert data to PostgreSQL table. On success insert this method will return data inserted primary key.
 // Please put your update query arguments in inputParameters to prevent SQL Injection.
 // Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
 // This method is good for inserting single data, If You want to inserting multiple data, please use goalPostgreSQL.PgInsert().
-// If You insert multiple data using this method it only return the first id.
+// If You insert multiple data using this method it only return the first row primary key.
 //
 // Function use example:
 // goalPostgreSQL.PgInsertOne(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "my_id_column_primary_key_with_auto_increment", "value of column1", "value of column2", "value of column3")
-func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, columnId string, inputParameters ...any) (int, error) {
+func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, columnPrimaryKey string, inputParameters ...any) (int, error) {
 	if len(columns) == 0 {
 		return 0, fmt.Errorf("no column: %q", columns)
 	}
@@ -265,7 +265,7 @@ func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, c
 	if len(columns) == 1 {
 		column := columns[0]
 		// Sql insert query
-		query := "INSERT INTO " + table + " (" + column + ") VALUES ($1) RETURNING " + columnId
+		query := "INSERT INTO " + table + " (" + column + ") VALUES ($1) RETURNING " + columnPrimaryKey
 		id := 0
 		errorExecutingQuery := connectionPool.QueryRow(context.Background(), query, inputParameters...).Scan(&id)
 		if errorExecutingQuery != nil {
@@ -293,7 +293,7 @@ func PgInsertOne(connectionPool *pgxpool.Pool, table string, columns []string, c
 	}
 	// Sql insert query
 	query := "INSERT INTO " + table + " (" + columnString.String() + lastColumn + ") VALUES (" +
-		valuePlaceholders.String() + ") RETURNING " + columnId
+		valuePlaceholders.String() + ") RETURNING " + columnPrimaryKey
 	id := 0
 	errorExecutingQuery := connectionPool.QueryRow(context.Background(), query, inputParameters...).Scan(&id)
 	if errorExecutingQuery != nil {
