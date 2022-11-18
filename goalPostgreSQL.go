@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -112,6 +113,10 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	defer rows.Close()
 	// Restore the columns
 	columns = append(columns, lastColumn)
+	for _, column := range columns {
+		regexp := regexp.MustCompile(`^(.*? as \b)|(.*? AS \b).*?`)
+		regexp.ReplaceAllString(column, "")
+	}
 	// Make map string interface array variable to hold this function result
 	result := make([]map[string]interface{}, 0)
 	// Iterate query result
