@@ -41,7 +41,7 @@ func PgClose(connectionPool *pgxpool.Pool) {
 //
 // Function use example:
 // goalPostgreSQL.PgSelect(connectionPool, []string{"id"}, "database.public.users", "WHERE username = $1 AND password = $2", username, password)
-func pgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
+func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	condition string, inputParameters ...any) ([]map[string]interface{}, error) {
 	/* Column 0 (error!!!) */
 	if len(columns) == 0 {
