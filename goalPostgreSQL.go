@@ -41,7 +41,7 @@ func PgClose(connectionPool *pgxpool.Pool) {
 //
 // Function use example:
 // goalPostgreSQL.PgSelect(connectionPool, []string{"id"}, "database.public.users", "WHERE username = $1 AND password = $2", username, password)
-func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
+func pgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	condition string, inputParameters ...any) ([]map[string]interface{}, error) {
 	/* Column 0 (error!!!) */
 	if len(columns) == 0 {
@@ -57,6 +57,12 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 				query, inputParameters, errorGetRows)
 		}
 		defer rows.Close()
+		// Column name casting
+		for index, column := range columns {
+			regexp := regexp.MustCompile(`^(.*? as \b)|(.*? AS \b).*?`)
+			column = regexp.ReplaceAllString(column, "")
+			columns[index] = column
+		}
 		// Make map string interface array variable to hold this function result
 		result := make([]map[string]interface{}, 0)
 		// Iterate query result
@@ -113,9 +119,11 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 	defer rows.Close()
 	// Restore the columns
 	columns = append(columns, lastColumn)
-	for _, column := range columns {
+	// Columns name casting
+	for index, column := range columns {
 		regexp := regexp.MustCompile(`^(.*? as \b)|(.*? AS \b).*?`)
-		regexp.ReplaceAllString(column, "")
+		column = regexp.ReplaceAllString(column, "")
+		columns[index] = column
 	}
 	// Make map string interface array variable to hold this function result
 	result := make([]map[string]interface{}, 0)
