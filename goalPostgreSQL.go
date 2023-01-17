@@ -171,15 +171,14 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 //
 // Function use example:
 // goalPostgreSQL.PgUpdate(connectionPool, "database.public.users", []string{column1, column2, column3}, "WHERE id = $4", valueColumn1, valueColumn2, valueColumn3)
-func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
-	condition string, inputParameters ...any) (int64, error) {
+func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, condition string, inputParameters ...any) (int64, error) {
 	/* Column 0 (error!!!) */
 	if len(columns) == 0 {
 		return 0, fmt.Errorf("no column selected for update: %q", columns)
 	}
 	/* Single column update query */
 	if len(columns) == 1 {
-		// MySql update query
+		// PostgreSQL update query
 		query := "UPDATE " + table + " SET " + columns[0] + " = $1 " + condition
 		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
 		if errorExecutingQuery != nil {
@@ -199,7 +198,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 	for index, column := range columns {
 		columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index+1) + ", ")
 	}
-	// MySql update query
+	// PostgreSQL update query
 	query := "UPDATE " + table + " SET " + columnPlaceholders.String() + lastColumn + " " + condition
 	executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
 	if errorExecutingQuery != nil {
@@ -269,7 +268,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string,
 // goalPostgreSQL.PgInsertOne(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "my_id_column_primary_key", "value of column1", "value of column2", "value of column3")
 func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, columnPrimaryKey string, inputParameters ...any) (int64, error) {
 	if len(columns) == 0 {
-		return 0, fmt.Errorf("no column: %q", columns)
+		return 0, fmt.Errorf("no column selected for insert data: %q", columns)
 	}
 	// Single column insert
 	if len(columns) == 1 {
@@ -312,4 +311,47 @@ func PgInsert(connectionPool *pgxpool.Pool, table string, columns []string, colu
 	}
 	// Return the id of row inserted
 	return int64(id), nil
+}
+
+// Delete data to PostgreSQL table. On success delete this method will return how many rows data deleted.
+// Please put your insert query arguments in inputParameters to prevent SQL Injection.
+// Arguments should be referenced positionally from the SQL string as $1, $2 and etc.
+//
+// Function use example:
+// pgDelete(connectionPool, "database.public.users", []string{"my_column1", "my_column2", "my_column3"}, "value of column1", "value of column2", "value of column3")
+func PgDelete(connectionPool *pgxpool.Pool, table string, columns []string, inputParameters ...any) (int64, error) {
+	if len(columns) == 0 {
+		return 0, fmt.Errorf("no column selected for delete data: %q", columns)
+	}
+	/* Single column delete query */
+	if len(columns) == 1 {
+		// PostgreSQL delete query
+		query := "DELETE FROM " + table + " WHERE " + columns[0] + " = $1"
+		executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+		if errorExecutingQuery != nil {
+			return 0, fmt.Errorf("PostgreSQL delete query failed: syntax %q, query parameters %q, error %s",
+				query, inputParameters, errorExecutingQuery)
+		}
+		// Return the total of rows deleted
+		return executeQuery.RowsAffected(), nil
+	}
+	/* Multi columns delete query */
+	// Create delete value parameter placeholders
+	var columnPlaceholders strings.Builder
+	// Get last column from columns parameter and add last argument position reference
+	lastColumn := columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
+	// Delete last column from columns parameter
+	columns = columns[:len(columns)-1]
+	for index, column := range columns {
+		columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index+1) + " AND ")
+	}
+	// PostgreSQL delete query
+	query := "DELETE FROM " + table + " WHERE " + columnPlaceholders.String() + lastColumn
+	executeQuery, errorExecutingQuery := connectionPool.Exec(context.Background(), query, inputParameters...)
+	if errorExecutingQuery != nil {
+		return 0, fmt.Errorf("PostgreSQL delete query failed: syntax %q, query parameters %q, error %s",
+			query, inputParameters, errorExecutingQuery)
+	}
+	// Return the total of rows deleted
+	return executeQuery.RowsAffected(), nil
 }
