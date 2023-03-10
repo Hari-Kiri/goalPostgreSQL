@@ -171,6 +171,9 @@ func PgSelect(connectionPool *pgxpool.Pool, columns []string, table string,
 //
 // Function use example:
 // goalPostgreSQL.PgUpdate(connectionPool, "database.public.users", []string{column1, column2, column3}, "WHERE id = $4", valueColumn1, valueColumn2, valueColumn3)
+//
+// Function use with PostgreSQL append function:
+// goalPostgreSQL.PgUpdate(connectionPool, "database.public.users", []string{column1.append, column2.append, column3.append}, "WHERE id = $4", valueColumn1, valueColumn2, valueColumn3)
 func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, condition string, inputParameters ...any) (int64, error) {
 	/* Column 0 (error!!!) */
 	if len(columns) == 0 {
@@ -195,8 +198,17 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, cond
 	lastColumn := columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
 	// Delete last column from columns parameter
 	columns = columns[:len(columns)-1]
-	for index, column := range columns {
-		columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index+1) + ", ")
+	// for index, column := range columns {
+	// 	columnPlaceholders.WriteString(column + " = $" + strconv.Itoa(index+1) + ", ")
+	// }
+	for index := 0; index < len(columns); index++ {
+		if strings.Contains(columns[index], "append") {
+			columnName := strings.Split(columns[index], ".")
+			columnPlaceholders.WriteString(columnName[0] + " = $" + strconv.Itoa(index+1) + ", ")
+		}
+		if !strings.Contains(columns[index], "append") {
+			columnPlaceholders.WriteString(columns[index] + " = $" + strconv.Itoa(index+1) + ", ")
+		}
 	}
 	// PostgreSQL update query
 	query := "UPDATE " + table + " SET " + columnPlaceholders.String() + lastColumn + " " + condition
