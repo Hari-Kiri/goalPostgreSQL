@@ -197,7 +197,8 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, cond
 	// Get last column from columns parameter and add last argument position reference
 	var lastColumn string
 	if strings.Contains(columns[len(columns)-1], "append") {
-		lastColumn = columns[len(columns)-1] + " = " + columns[len(columns)-1] + " || $" + strconv.Itoa(len(columns)) + ", "
+		columnName := strings.Split(columns[len(columns)-1], ".")
+		lastColumn = columnName[0] + " = " + columnName[0] + " || $" + strconv.Itoa(len(columns))
 	}
 	if !strings.Contains(columns[len(columns)-1], "append") {
 		lastColumn = columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
