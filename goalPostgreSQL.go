@@ -195,7 +195,13 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, cond
 	// Create update value parameter placeholders
 	var columnPlaceholders strings.Builder
 	// Get last column from columns parameter and add last argument position reference
-	lastColumn := columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
+	var lastColumn string
+	if strings.Contains(columns[len(columns)-1], "append") {
+		lastColumn = columns[len(columns)-1] + " = " + columns[len(columns)-1] + " || $" + strconv.Itoa(len(columns)) + ", "
+	}
+	if !strings.Contains(columns[len(columns)-1], "append") {
+		lastColumn = columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
+	}
 	// Delete last column from columns parameter
 	columns = columns[:len(columns)-1]
 	// for index, column := range columns {
