@@ -204,8 +204,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, cond
 	for index := 0; index < len(columns); index++ {
 		if strings.Contains(columns[index], "append") {
 			columnName := strings.Split(columns[index], ".")
-			columnPlaceholders.WriteString(columnName[0] + " = append(" + columnName[0] + ", $" +
-				strconv.Itoa(index+1) + "), ")
+			columnPlaceholders.WriteString(columnName[0] + " = " + columnName[0] + " || $" + strconv.Itoa(index+1) + ", ")
 		}
 		if !strings.Contains(columns[index], "append") {
 			columnPlaceholders.WriteString(columns[index] + " = $" + strconv.Itoa(index+1) + ", ")
