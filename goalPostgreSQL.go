@@ -198,7 +198,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, cond
 	var lastColumn string
 	if strings.Contains(columns[len(columns)-1], "append") {
 		columnName := strings.Split(columns[len(columns)-1], ".")
-		lastColumn = columnName[0] + " = " + columnName[0] + " || $" + strconv.Itoa(len(columns))
+		lastColumn = columnName[0] + " = array_append(" + columnName[0] + ", $" + strconv.Itoa(len(columns)) + ")"
 	}
 	if !strings.Contains(columns[len(columns)-1], "append") {
 		lastColumn = columns[len(columns)-1] + " = $" + strconv.Itoa(len(columns))
@@ -211,7 +211,7 @@ func PgUpdate(connectionPool *pgxpool.Pool, table string, columns []string, cond
 	for index := 0; index < len(columns); index++ {
 		if strings.Contains(columns[index], "append") {
 			columnName := strings.Split(columns[index], ".")
-			columnPlaceholders.WriteString(columnName[0] + " = " + columnName[0] + " || $" + strconv.Itoa(index+1) + ", ")
+			columnPlaceholders.WriteString(columnName[0] + " = array_append(" + columnName[0] + ", $" + strconv.Itoa(index+1) + "), ")
 		}
 		if !strings.Contains(columns[index], "append") {
 			columnPlaceholders.WriteString(columns[index] + " = $" + strconv.Itoa(index+1) + ", ")
